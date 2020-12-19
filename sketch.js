@@ -3,6 +3,7 @@ var PLAY = 1;
 var END = 0;
 var CRASH=2;
 var gameState = PLAY;
+var score=0;
 
 //background
 var ground,backgroundimg;
@@ -14,25 +15,25 @@ var crash;
 var bikeimg,bikeimg2,bike,bike3right,bike3left;
 
 //car1
-var car1img,car1;
+var car1img;
 
 //car2
-var car2img,car2;
+var car2img;
 
 //car3
-var car3img,car3;
+var car3img;
 
 //car4
-var car4img,car4;
+var car4img;
 
 //car5
-var car5img,car5;
+var car5img;
 
 //car6
-var car6img, car6;
+var car6img;
 
 //car7
-var car7img, car7;
+var car7img;
 
 //rockstar
 var rockstarimg,rockstar;
@@ -47,13 +48,15 @@ var crashsnd;
 var racesnd;
 
 //gameend
-var restart;
- var gameoverimg;
+var RESTART,GAMEOVER;
+
+//gameoverimg
+var gameoverimg;
+
 
 function preload(){
 //backgroundimg
 backgroundimg = loadImage("images/backgroundimg.jpg")
-
 
 //bikeimg
 bikeimg = loadAnimation("images/bike3.png")
@@ -106,25 +109,17 @@ crashsnd = loadSound("sounds/crashsound.mp3")
 //racesound
 racesnd = loadSound("sounds/racesound.mp3")
 
-//score
-score = 0;
-
 }
 
 function setup() {
   createCanvas(700,720);
 
-  //crash
-
-
 //ground
 ground = createSprite(350,350,400,700);
   ground.addImage("ground",backgroundimg);
-  //ground.y = ground.height/2;
-  //ground.velocityY = 6
 
   //bike
-  bike = createSprite(250,250,50,50);
+  bike = createSprite(250,320,50,50);
   bike.addAnimation("bikeimg",bikeimg);
   bike.scale = 0.7;
  
@@ -133,25 +128,31 @@ ground = createSprite(350,350,400,700);
   rockstar.addImage("rockstar",rockstarimg);
   rockstar.scale = 0.3;
 
-  //restart
-  restart=createSprite(300,150);  
-  restart.addImage("restartimg",restartimg);
-  restart.scale = 0.4;
-  restart.visible = false;
+  RESTART = createSprite(350,460,30,30);
+  RESTART.addImage("restart",restartimg);
+  RESTART.scale=0.6;
+  RESTART.visible=false;
 
- 
+  GAMEOVER = createSprite(350,300,30,20);
+  GAMEOVER.addImage("gameover",gameoverimg);
+  GAMEOVER.scale=0.9;
+  GAMEOVER.visible=false;
 
   score=0;
    CarsGroup = new Group();
+   BoostGroup = new Group();
 }
 
 function draw() {
         
   background(255);
-  
+  text("Score: "+ score, 350,350);
+  console.log(bike.x);
   if (gameState === PLAY){
   bike.velocityX = 0;
-  bike.velocityX = 0; 
+  bike.velocityY = 0; 
+
+  score = score + Math.round(getFrameRate()/60);
   ground.velocityY = 6
  
   if (ground.y > 700) {
@@ -159,21 +160,25 @@ function draw() {
 }
 
   // right arrow
-   if(keyDown("RIGHT_ARROW")) {
+   if(keyDown("RIGHT_ARROW")) {    
     bike.velocityX = 5;
-   bike.addAnimation("bikeimg",bike3right);
     }
-
-
  
   //left arrow
   if(keyDown("LEFT_ARROW")) {
     bike.velocityX = -5;
-    bike.addAnimation("bikeimg",bike3left);
-    bike.addImage("bikeimg",bikeimg2);
   }
 
-  if (bike.x<50 || bike.x>670 || CarsGroup.isTouching(bike)) {
+  if(GAMEOVER.visible) {
+        CarsGroup.setVelocityXEach(0);
+        CarsGroup.setVelocityYEach(0);
+        CarsGroup.destroyEach();
+        ground.velocityX=0;
+        ground.velocityY=0;
+        bike.visible=false;         
+      }
+      
+  if (bike.x<100 || bike.x>615 || CarsGroup.isTouching(bike)) {
    //gameState = END;     
    gameover();    
   }
@@ -185,30 +190,24 @@ function draw() {
   spawncars4();
 }
 
-
-
 else if (gameState === END){
 gameover=createSprite(300,200,700,720)
  gameover.addImage(gameOverImage);
  ground.velocityY=0
   CarsGroup.setVelocityXEach(0);
-  bike.velocityX=0; 
+  bike.velocityX=0;   
 }
 
+if(mousePressedOver(RESTART)) {
+        gameState = PLAY;
+        reset();
+}
+
+
 drawSprites();
+
 }
-function keyPressed(){
-   if(keyCode === 37)
-   {
-   bike.velocityX = -5;
-   bike.addAnimation("bikeimg",bike3left);   
-   }
-   if(keyCode === 39)
-   {
-   bike.velocityX = 5;
-   bike.addAnimation("bikeimg",bike3right); 
-   }
-}
+
 
 function gameover(){
   CarsGroup.setVelocityXEach(0);
@@ -216,18 +215,24 @@ function gameover(){
   CarsGroup.destroyEach();
   ground.velocityX=0;
   ground.velocityY=0;
-  bike.destroy();
+  bike.visible=false;
+  RESTART.visible=true;
+  GAMEOVER.visible=true;
 
-  var GAMEOVER = createSprite(350,300,30,20);
-  GAMEOVER.addImage("gameover",gameoverimg);
-  GAMEOVER.scale=0.9;
-
-  var RESTART = createSprite(350,460,30,30);
-  RESTART.addImage("restart",restartimg);
-  RESTART.scale=0.6;
-
+  
 }
 
+function reset(){
+  gameState = PLAY;  
+  CarsGroup.setVelocityXEach(0);
+  CarsGroup.setVelocityYEach(-6);
+  ground.velocityY=6;
+  bike.visible=true;
+  bike.x = 250;
+  bike.y = 320;
+  GAMEOVER.visible=false;
+  RESTART.visible=false;
+}
 
 function spawncars() {
   if(frameCount % 170 === 0) {
@@ -235,6 +240,7 @@ function spawncars() {
 
    //car.debug = true;
     car.velocityY = -6;
+      car.scale = 1.2;
    
                                                                                     
     //generate random cars
@@ -269,6 +275,7 @@ function spawncars2() {
     var car = createSprite(280,700,10,40);
    //car.debug = true;
     car.velocityY = -6;
+      car.scale = 1.2;
                                                                                     
     //generate random cars
     var rand = Math.round(random(1,5));
@@ -302,6 +309,7 @@ function spawncars3() {
     var car = createSprite(420,700,10,40);
    //car.debug = true;
     car.velocityY = -6;
+      car.scale = 1.2;
                                                                                     
     //generate random cars
     var rand = Math.round(random(1,5));
@@ -335,6 +343,7 @@ function spawncars4() {
     var car = createSprite(520,700,10,40);
    //car.debug = true;
     car.velocityY = -6;
+      car.scale = 1.2;
                                                                                     
     //generate random cars
     var rand = Math.round(random(1,5));
@@ -362,3 +371,4 @@ function spawncars4() {
     CarsGroup.add(car);
   }
 }
+
